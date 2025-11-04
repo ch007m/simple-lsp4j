@@ -1,0 +1,17 @@
+Welcome to the Enhanced LSP4J Demo!
+
+This is a sample text file that demonstrates the text file reading capability of the improved LauncherApp.
+
+Features demonstrated:
+- JSON client requests to the server
+- Text file reading and content retrieval
+- Message posting and fetching
+- Structured JSON communication
+
+The server can now:
+1. Load and serve text file content
+2. Handle multiple types of JSON requests
+3. Manage user messages with proper JSON serialization
+4. Provide error handling and logging
+
+This text file contains exactly what you need to test the enhanced LSP4J application.
