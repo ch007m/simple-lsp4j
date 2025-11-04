@@ -103,33 +103,6 @@ public class LauncherApp {
                 e.printStackTrace();
             }
 
-            CompletionParams p = new CompletionParams();
-            p.setPosition(new Position(1,1));
-            p.setTextDocument(new TextDocumentIdentifier("test/foo.txt"));
-
-            CompletionList result = new CompletionList();
-            result.setIsIncomplete(true);
-            result.setItems(new ArrayList<>());
-
-            CompletionItem item = new CompletionItem();
-            item.setDetail("test");
-            item.setDocumentation("doc");
-            item.setFilterText("filter");
-            item.setInsertText("insert");
-            item.setKind(CompletionItemKind.Field);
-            result.getItems().add(item);
-
-            ExecuteCommandParams execCmd = new ExecuteCommandParams();
-            execCmd.setCommand("server/getTextContent");
-
-            System.out.printf("=== Execute the command at the server side: %s\n","server/getTextContent");
-            CompletableFuture<Object> future = clientLauncher.getRemoteProxy().getWorkspaceService().executeCommand(execCmd).exceptionally(t -> {
-                t.printStackTrace();
-                return null;
-            });
-
-            System.out.println("=== Language server results: " + future.get().toString());
-
             // Now try direct endpoint access to prove it works
             System.out.println("=== Using direct endpoint access instead of the server proxy ...");
             try {
