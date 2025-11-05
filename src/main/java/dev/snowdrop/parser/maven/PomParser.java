@@ -23,36 +23,18 @@ public class PomParser {
         req.setPomFile(new File(pomPath));
         req.setValidationLevel(ModelBuildingRequest.VALIDATION_LEVEL_MINIMAL);
         req.setSystemProperties(System.getProperties());
-
+        req.setLocationTracking(true);
         req.setModelResolver(new RepositoryModelResolver());
 
-        ModelBuildingResult result;
+        Result<? extends Model> result;
         try {
-            result = modelBuilder.build(req);
+            result = modelBuilder.buildRawModel(new File(pomPath),0,true);
         } catch (Exception e) {
             System.out.println("Could not build effective model: " + e.getMessage());
             return Optional.empty();
         }
 
-        Model model = result.getEffectiveModel();
-        return searchDependency(model, groupId, artifactId, version);
-
-        /* OR
-            List<String> modelIds = result.getModelIds();
-
-            for (int i = modelIds.size() - 1; i >= 0; i--) {
-            String modelId = modelIds.get(i);
-
-            Model model = result.getRawModel(modelId);
-
-            if (model == null) {
-                continue; // Should not happen, but good to check
-            }
-
-            return searchDependency(model,groupId,artifactId,version);
-            }
-            return Optional.empty();
-        */
+        return searchDependency(result.get(), groupId, artifactId, version);
 
     }
 
@@ -100,8 +82,8 @@ public class PomParser {
             System.out.println("\n--- Dependency Found ---");
 
             // Show the location of the dependency
-            if (location.isPresent() && location.get().getLocation("") != null) {
-                var loc = location.get().getLocation("");
+            if (location.isPresent() && location.get() != null) {
+                var loc = location.get();
                 System.out.println("  Source: " + loc.getSource().getLocation());
                 System.out.println("  Line:   " + loc.getLineNumber());
                 System.out.println("  Column: " + loc.getColumnNumber());
