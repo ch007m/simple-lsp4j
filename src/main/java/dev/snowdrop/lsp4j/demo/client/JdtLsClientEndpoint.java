@@ -1,7 +1,7 @@
 package dev.snowdrop.lsp4j.demo.client;
 
 import com.google.gson.JsonObject;
-import dev.snowdrop.lsp4j.chat.shared.UserMessage;
+import dev.snowdrop.lsp4j.demo.shared.UserMessage;
 import org.eclipse.lsp4j.jsonrpc.Endpoint;
 
 import java.util.concurrent.CompletableFuture;

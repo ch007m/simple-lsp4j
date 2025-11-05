@@ -1,6 +1,6 @@
 package dev.snowdrop.lsp4j.demo.server;
 
-import dev.snowdrop.lsp4j.chat.shared.UserMessage;
+import dev.snowdrop.lsp4j.demo.shared.UserMessage;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;

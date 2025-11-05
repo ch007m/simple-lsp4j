@@ -9,7 +9,6 @@ import dev.snowdrop.lsp4j.demo.server.JdtLsServerEndpoint;
 import org.eclipse.lsp4j.*;
 import org.eclipse.lsp4j.jsonrpc.Endpoint;
 import org.eclipse.lsp4j.jsonrpc.Launcher;
-import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.jsonrpc.services.ServiceEndpoints;
 import org.eclipse.lsp4j.launch.LSPLauncher;
 import org.eclipse.lsp4j.services.LanguageClient;
@@ -17,8 +16,6 @@ import org.eclipse.lsp4j.services.LanguageServer;
 
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -128,18 +125,6 @@ public class LauncherApp {
             } catch (Exception e) {
                 System.err.println("   Search Error: " + e.getMessage() + "\n");
             }
-
-
-            /*
-            //  Test error handling with unknown method via LSP client
-            System.out.println(" Client testing error handling with unknown method via LSP...");
-            try {
-                CompletableFuture<?> errorFuture = remoteEndpoint.request("server/unknownMethod", null);
-                Object errorResult = errorFuture.get();
-                printResponse("   Error response:", errorResult);
-            } catch (Exception e) {
-                System.err.println("   Exception: " + e.getMessage() + "\n");
-            }*/
 
             // Allow any pending operations to complete before streams are closed
             Thread.sleep(100);
