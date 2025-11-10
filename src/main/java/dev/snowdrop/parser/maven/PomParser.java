@@ -1,17 +1,10 @@
 package dev.snowdrop.parser.maven;
 
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.DefaultArtifact;
-import org.apache.maven.artifact.handler.DefaultArtifactHandler;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.InputLocation;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
 import org.apache.maven.model.building.*;
-import org.eclipse.aether.collection.CollectRequest;
-import org.eclipse.aether.collection.CollectResult;
-import org.eclipse.aether.collection.DependencyCollectionException;
-import org.eclipse.aether.graph.DependencyNode;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -28,7 +21,7 @@ public class PomParser {
         this.modelBuilder = new DefaultModelBuilderFactory().newInstance();
     }
 
-    public Optional<InputLocation> findDependencyLocation(String pomPath, String groupId, String artifactId, String version) throws DependencyCollectionException {
+    public Optional<InputLocation> findDependencyLocation(String pomPath, String groupId, String artifactId, String version) {
         ModelBuildingResult result = buildModel(pomPath);
 
         // First try with effective model (current behavior)
@@ -40,28 +33,6 @@ public class PomParser {
         }
 
         return location;
-        //return collectDependency(repositoryModelResolver,result.get(), groupId, artifactId, version);
-    }
-
-    public Optional<InputLocation> collectDependency(RepositoryModelResolver resolver, Model model, String groupId, String artifactId, String version) throws DependencyCollectionException {
-        DefaultArtifactHandler artifactHandler = new DefaultArtifactHandler();
-        Artifact artifact = new DefaultArtifact(groupId, artifactId, version, "compile", "jar", null, artifactHandler);
-
-        Dependency rootDep = new Dependency();
-        rootDep.setArtifactId(artifactId);
-
-        CollectRequest collectRequest = new CollectRequest();
-        // collectRequest.setRoot(rootDep);
-        collectRequest.setRepositories(resolver.getRepositories());
-
-        CollectResult collectResult = resolver.getRepoSystem().collectDependencies(resolver.getSession(), collectRequest);
-
-        DependencyNode root = collectResult.getRoot();
-        for (DependencyNode node : root.getChildren()) {
-            System.out.println("Transitive dependency: " + node.getArtifact());
-        }
-
-        return Optional.empty();
     }
 
     public Optional<InputLocation> searchDependency(Model model, String pomPath, String groupId, String artifactId, String version, boolean isEffectiveModel) {
