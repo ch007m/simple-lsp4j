@@ -3,10 +3,10 @@ package dev.snowdrop.parser.maven;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.InputLocation;
 import org.apache.maven.model.Model;
+import org.apache.maven.model.Parent;
 import org.apache.maven.model.building.*;
 
 import java.io.File;
-import java.util.Objects;
 import java.util.Optional;
 
 public class PomParser {
@@ -29,7 +29,7 @@ public class PomParser {
 
         Result<? extends Model> result;
         try {
-            result = modelBuilder.buildRawModel(new File(pomPath),0,true);
+            result = modelBuilder.buildRawModel(new File(pomPath), 0, true);
         } catch (Exception e) {
             System.out.println("Could not build effective model: " + e.getMessage());
             return Optional.empty();
@@ -40,31 +40,53 @@ public class PomParser {
     }
 
     public Optional<InputLocation> searchDependency(Model model, String groupId, String artifactId, String version) {
-        if (model.getDependencyManagement() != null) {
-            Optional<Dependency> dep = model.getDependencyManagement().getDependencies().stream()
-                .filter(d -> groupId.equals(d.getGroupId()) && artifactId.equals(d.getArtifactId()) && version.equals(d.getVersion()))
-                .findFirst();
-
-            if (dep.isPresent()) {
-                return Optional.ofNullable(dep.get().getLocation(""));
-            }
-        }
-
-        if (model.getParent() != null) {
-            var parent = model.getParent();
-            if (groupId.equals(parent.getGroupId()) && artifactId.equals(parent.getArtifactId()) && version.equals(parent.getVersion())) {
-                return Optional.ofNullable(parent.getLocation(""));
-            }
-        }
-
         if (model.getDependencies() != null) {
             Optional<Dependency> dep = model.getDependencies().stream()
-                .filter(d -> groupId.equals(d.getGroupId()) && artifactId.equals(d.getArtifactId()))
+                .filter(d -> {
+                    boolean depVersion = (d.getVersion() != null && !d.getVersion().isEmpty());
+                    if (!depVersion) {
+                        return groupId.equals(d.getGroupId()) && artifactId.equals(d.getArtifactId());
+                    } else {
+                        return groupId.equals(d.getGroupId()) && artifactId.equals(d.getArtifactId()) && version.equals(d.getVersion());
+                    }
+                })
                 .findFirst();
 
             if (dep.isPresent()) {
                 // Found it!
                 return Optional.ofNullable(dep.get().getLocation(""));
+            }
+        }
+
+        if (model.getDependencyManagement() != null) {
+            Optional<Dependency> dep = model.getDependencyManagement().getDependencies().stream()
+                .filter(d -> {
+                    boolean depVersion = (d.getVersion() != null && !d.getVersion().isEmpty());
+                    if (!depVersion) {
+                        return groupId.equals(d.getGroupId()) && artifactId.equals(d.getArtifactId());
+                    } else {
+                        return groupId.equals(d.getGroupId()) && artifactId.equals(d.getArtifactId()) && version.equals(d.getVersion());
+                    }
+                })
+                .findFirst();
+
+            if (dep.isPresent()) {
+                // Found it!
+                return Optional.ofNullable(dep.get().getLocation(""));
+            }
+        }
+
+        Parent p = model.getParent();
+        if (p != null) {
+            boolean parentVersion = (p.getVersion() != null && !p.getVersion().isEmpty());
+            if (!parentVersion) {
+                if (groupId.equals(p.getGroupId()) && artifactId.equals(p.getArtifactId())) {
+                    return Optional.ofNullable(p.getLocation(""));
+                }
+            } else {
+                if (groupId.equals(p.getGroupId()) && artifactId.equals(p.getArtifactId()) && version.equals(p.getVersion())) {
+                    return Optional.ofNullable(p.getLocation(""));
+                }
             }
         }
         return Optional.empty();
@@ -83,7 +105,7 @@ public class PomParser {
 
         String depG = gavParts[0];
         String depA = gavParts[1];
-        String depV = (gavParts.length > 2 && gavParts[2] != null) ? gavParts[2] : "null";
+        String depV = (gavParts.length > 2 && gavParts[2] != null) ? gavParts[2] : "";
 
         System.out.printf("--- Searching for %s:%s:%s starting from %s", depG, depA, depV, pomPath);
 
