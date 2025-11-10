@@ -6,6 +6,7 @@ import org.apache.maven.model.Model;
 import org.apache.maven.model.building.*;
 
 import java.io.File;
+import java.util.Objects;
 import java.util.Optional;
 
 public class PomParser {
@@ -38,14 +39,21 @@ public class PomParser {
 
     }
 
-    public Optional searchDependency(Model model, String groupId, String artifactId, String version) {
+    public Optional<InputLocation> searchDependency(Model model, String groupId, String artifactId, String version) {
         if (model.getDependencyManagement() != null) {
             Optional<Dependency> dep = model.getDependencyManagement().getDependencies().stream()
-                .filter(d -> groupId.equals(d.getGroupId()) && artifactId.equals(d.getArtifactId()))
+                .filter(d -> groupId.equals(d.getGroupId()) && artifactId.equals(d.getArtifactId()) && version.equals(d.getVersion()))
                 .findFirst();
 
             if (dep.isPresent()) {
                 return Optional.ofNullable(dep.get().getLocation(""));
+            }
+        }
+
+        if (model.getParent() != null) {
+            var parent = model.getParent();
+            if (groupId.equals(parent.getGroupId()) && artifactId.equals(parent.getArtifactId()) && version.equals(parent.getVersion())) {
+                return Optional.ofNullable(parent.getLocation(""));
             }
         }
 
@@ -63,30 +71,34 @@ public class PomParser {
     }
 
     public static void main(String[] args) {
-        if (args.length == 0) {
-            System.out.println("Usage: java PomParser <path-to-pom.xml>");
+        if (args.length != 2) {
+            System.out.println("Usage: java PomParser <path-to-pom.xml> <group:artifact:version>");
             System.exit(1);
         }
         String pomPath = args[0];
+        String gavString = args[1];
 
-        // --- Dependency to search for ---
-        String depG = "org.springframework.boot";
-        String depA = "spring-boot-starter-web";
-        String depV = "3.5.3";
+        // Parse GAV format (group:artifact:version)
+        String[] gavParts = gavString.split(":");
+
+        String depG = gavParts[0];
+        String depA = gavParts[1];
+        String depV = (gavParts.length > 2 && gavParts[2] != null) ? gavParts[2] : "null";
 
         System.out.printf("--- Searching for %s:%s:%s starting from %s", depG, depA, depV, pomPath);
 
         try {
             PomParser parser = new PomParser();
-            Optional<InputLocation> location = parser.findDependencyLocation(pomPath, depG, depA, depV);
-            System.out.println("\n--- Dependency Found ---");
+            Optional<InputLocation> loc = parser.findDependencyLocation(pomPath, depG, depA, depV);
 
             // Show the location of the dependency
-            if (location.isPresent() && location.get() != null) {
-                var loc = location.get();
-                System.out.println("  Source: " + loc.getSource().getLocation());
-                System.out.println("  Line:   " + loc.getLineNumber());
-                System.out.println("  Column: " + loc.getColumnNumber());
+            if (loc.isPresent() && loc.get() != null) {
+                System.out.printf("\n--- Dependency Found : %s:%s:%s !\n", depG, depA, depV);
+                System.out.println("--- Source: " + loc.get().getSource().getLocation());
+                System.out.println("--- Line:   " + loc.get().getLineNumber());
+                System.out.println("--- Column: " + loc.get().getColumnNumber());
+            } else {
+                System.out.printf("\n--- Dependency NOT Found : %s:%s:%s !", depG, depA, depV);
             }
 
         } catch (Exception e) {
