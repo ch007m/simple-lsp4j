@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("PomParser GAV Testing")
-public class PomParserTest {
+public class QuarkusPomParentChildTest {
 
     private PomParser pomParser;
     private String mavenProjectPath;
@@ -21,7 +21,7 @@ public class PomParserTest {
     @BeforeEach
     void setUp() throws IOException {
         pomParser = new PomParser();
-        mavenProjectPath = "src/test/resources/parent-child";
+        mavenProjectPath = "src/test/resources/quarkus-parent-child";
     }
     
     @Test

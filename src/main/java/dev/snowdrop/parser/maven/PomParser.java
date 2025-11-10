@@ -70,7 +70,7 @@ public class PomParser {
             //System.out.println("========= Dependencies ==========");
             //printDependencies(model.getDependencies());
             Optional<Dependency> dep = model.getDependencies().stream()
-                .filter(d -> matchesDependency(d, groupId, artifactId, version, model, isEffectiveModel))
+                .filter(d -> matchesGav(d, groupId, artifactId, version, model, isEffectiveModel))
                 .findFirst();
 
             if (dep.isPresent()) {
@@ -83,7 +83,7 @@ public class PomParser {
             //System.out.println("========= Dependencies of DependencyManagement ==========");
             //printDependencies(model.getDependencyManagement().getDependencies());
             Optional<Dependency> dep = model.getDependencyManagement().getDependencies().stream()
-                .filter(d -> matchesDependency(d, groupId, artifactId, version, model, isEffectiveModel))
+                .filter(d -> matchesGav(d, groupId, artifactId, version, model, isEffectiveModel))
                 .findFirst();
 
             if (dep.isPresent()) {
@@ -94,10 +94,19 @@ public class PomParser {
 
         Parent p = model.getParent();
         if (p != null) {
-            // If the GAV has not been found within the parent tag, then we will search about within the parent pom: dependencies, dependencyManagement
+            // If the GAV has not been found within the parent tag, then we will search about it within the parent pom: dependencies, dependencyManagement
             String parentRelativePath = p.getRelativePath();
-            String parentPomPath = Paths.get(new File(pomPath).getParent(), parentRelativePath).toString();
-            return searchDependency(buildModel(parentPomPath).getEffectiveModel(), parentPomPath, groupId, artifactId, version, true);
+            if (parentRelativePath != "") {
+                String parentPomPath = Paths.get(new File(pomPath).getParent(), parentRelativePath).toString();
+                return searchDependency(buildModel(parentPomPath).getEffectiveModel(), parentPomPath, groupId, artifactId, version, true);
+            } else {
+                // GAV is defined part of the pom parent section
+                if (matchesGav(p, groupId, artifactId, version, model, isEffectiveModel)) {
+                    return Optional.ofNullable(p.getLocation(""));
+                } else {
+                    return Optional.empty();
+                }
+            }
         }
         return Optional.empty();
     }
@@ -134,31 +143,49 @@ public class PomParser {
     }
 
     /**
-     * Matches a dependency against the search criteria, handling both effective and raw models
+     * Matches a dependency GAV against the search criteria, handling both effective and raw models
      */
-    private boolean matchesDependency(Dependency dependency, String groupId, String artifactId, String version, Model model, boolean isEffectiveModel) {
-        String depGroupId = dependency.getGroupId();
-        String depArtifactId = dependency.getArtifactId();
-        String depVersion = dependency.getVersion();
+    private boolean matchesGav(Dependency dependency, String groupId, String artifactId, String version, Model model, boolean isEffectiveModel) {
+        return matchesArtifact(dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion(),
+                             groupId, artifactId, version, model, isEffectiveModel);
+    }
+
+    /**
+     * Matches a parent GAV against the search criteria, handling both effective and raw models
+     */
+    private boolean matchesGav(Parent parent, String groupId, String artifactId, String version, Model model, boolean isEffectiveModel) {
+        return matchesArtifact(parent.getGroupId(), parent.getArtifactId(), parent.getVersion(),
+                             groupId, artifactId, version, model, isEffectiveModel);
+    }
+
+    /**
+     * Common logic for matching artifacts (dependencies or parents) against search criteria
+     */
+    private boolean matchesArtifact(String artifactGroupId, String artifactArtifactId, String artifactVersion,
+                                   String searchGroupId, String searchArtifactId, String searchVersion,
+                                   Model model, boolean isEffectiveModel) {
+        String resolvedGroupId = artifactGroupId;
+        String resolvedArtifactId = artifactArtifactId;
+        String resolvedVersion = artifactVersion;
 
         // For raw model, resolve properties to match against the search criteria
         if (!isEffectiveModel) {
-            depGroupId = resolveProperty(depGroupId, model);
-            depArtifactId = resolveProperty(depArtifactId, model);
-            depVersion = resolveProperty(depVersion, model);
+            resolvedGroupId = resolveProperty(resolvedGroupId, model);
+            resolvedArtifactId = resolveProperty(resolvedArtifactId, model);
+            resolvedVersion = resolveProperty(resolvedVersion, model);
         }
 
         // Check if groupId and artifactId match
-        if (!groupId.equals(depGroupId) || !artifactId.equals(depArtifactId)) {
+        if (!searchGroupId.equals(resolvedGroupId) || !searchArtifactId.equals(resolvedArtifactId)) {
             return false;
         }
 
         // Check version if specified
-        boolean searchVersion = (version != null && !version.isEmpty());
-        if (!searchVersion) {
+        boolean hasSearchVersion = (searchVersion != null && !searchVersion.isEmpty());
+        if (!hasSearchVersion) {
             return true; // Match without version check
         } else {
-            return version.equals(depVersion);
+            return searchVersion.equals(resolvedVersion);
         }
     }
 
