@@ -104,4 +104,16 @@ public class RepositoryModelResolver implements ModelResolver {
         session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
         return session;
     }
+
+    public RepositorySystem getRepoSystem() {
+        return repoSystem;
+    }
+
+    public DefaultRepositorySystemSession getSession() {
+        return session;
+    }
+
+    public List<RemoteRepository> getRepositories() {
+        return repositories;
+    }
 }
