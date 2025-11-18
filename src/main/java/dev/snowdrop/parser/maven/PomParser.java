@@ -37,6 +37,8 @@ public class PomParser {
 
     public Optional<InputLocation> searchDependency(Model model, String pomPath, String groupId, String artifactId, String version, boolean isEffectiveModel) {
 
+        //model.getBuild().getPlugins().stream().forEach(p -> {System.out.printf("Plugin gav: %s:%s:%s\n", p.getGroupId(), p.getArtifactId(), p.getVersion());});
+
         if (model.getDependencies() != null) {
             //System.out.println("========= Dependencies ==========");
             //printDependencies(model.getDependencies());
@@ -79,6 +81,7 @@ public class PomParser {
                 }
             }
         }
+
         return Optional.empty();
     }
 
